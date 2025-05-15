@@ -1,0 +1,15 @@
+Como instalar e inicializar esta API
+ > Salve os arquivos deste repositório em uma pasta à parte
+ > Crie um ambiente virtual (venv) em seu prompt de comando
+  python -m venv api
+ > Inicialize o ambiente
+  Windows:
+   api/Scripts/activate
+  Linux / macOS:
+   sourc api/bin/activate
+ > Com o ambiente criado, instale as dependências
+  pip install -r requirements.txt
+ > Com a instalação completa, inicialize a API, podendo escolhe porta de preferência (ex: 5000)
+  uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+
+  API operante! Parabéns!
