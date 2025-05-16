@@ -38,11 +38,9 @@ class DadosCartao(BaseModel):
 class DadosEmail(BaseModel):
     email: str
 
-def tela_erro(tela: str, status_code: int):
-    with open(f"templates/{tela}", "r", encoding="utf-8") as f:
-            conteudo = f.read()
-    return HTMLResponse(content=conteudo, status_code=status_code)
-
+# Função para censurar os dados do cartão
+def mascarar_string(s, visiveis=4):
+    return "*" * (len(s) - visiveis) + s[-visiveis:]
 # Gerador de log diário
 def configurar_logger():
     # Cria a pasta 'logs' se não existir
@@ -136,23 +134,30 @@ def obter_email(token: str, dados_email: DadosEmail):
         mensagem["To"] = dados_email.email
         corpo_email = f"""
     <html>
-        <head><title>Compra Confirmada</title></head>
-        <body style="font-family:sans-serif;text-align:center;margin-top:40px">
-            <h1>Confirme sua compra</h1>
-            <p>
-                Clique no botão abaixo para confirmar:
-            </p>
-            <p>
-                <a href='http://localhost:5000/valida_compra/{token}' 
-                    style="display:inline-block;padding:10px 20px;background-color:#4CAF50;
-                      color:white;text-decoration:none;border-radius:5px;">
-                    Confirmar Compra
-                </a>
-            </p>
-            <p style="margin-top:30px;font-size:12px;color:gray;">
-                Se você não realizou essa solicitação, ignore este e-mail.
-            </p>
+        <head>
+            <title>Confirmação de Compra</title>  
+            <link rel="stylesheet" href="mail.css">
+        </head>
+        <body>
+            <div class="titulo">
+                <h1>Uma compra foi efetuada em seu nome</h1>
+                <p><span class="informaçoes">Nome:</span> {mascarar_string(tokens_pendentes[token]["nome_cartao"], 4)}</p>
+                <p><span class="informaçoes">Número do cartão:</span> {mascarar_string(tokens_pendentes[token]["cod_cartao"]), 1}</p>
+                <p><span class="informaçoes">Vencimento:</span> {tokens_pendentes[token]["validade"]}</p>
+                <p><span class="informaçoes">CVV:</span> {tokens_pendentes[token]["validade"]}</p>
+                <p><span class="informaçoes">Valor:</span> R$ {tokens_pendentes[token]["valor"]}</p>
+                <p><span class="informaçoes">Quantidade de Parcelas:</span> {tokens_pendentes[token]["parcelas"]}x</p>
+                <div class="importante">
+                    <p style="flex: 1; min-width: 200px;">Para confirmar sua compra de forma segura, clique no botão</p>
+                    <a href="http://localhost:5000/valida_compra/{token}" class="botao">Confirmar Compra</a>
+                </div>
+                <p class="final">Caso não reconheça esta compra, apenas ignore este email.</p>
+            </div>
+            <script>
+                console.log();
+            </script>
         </body>
+
     </html>
     """
         # Anexar corpo do e-mail
@@ -198,16 +203,9 @@ def valida_compra(token: str):
     # Remove o antigo
     del tokens_pendentes[token]
     logging.info(f"Token movido para tokens válidos: {novo_token}")
-    html_content = """
-    <html>
-        <head><title>Compra Confirmada</title></head>
-        <body style="font-family:sans-serif;text-align:center;margin-top:40px">
-            <h1>✅ Compra confirmada com sucesso!</h1>
-            <p>Obrigado por confirmar sua compra.</p>
-        </body>
-    </html>
-    """
-    logging.info("Compra confirmada com sucesso!")
+    with open("confirma.html", "r") as file:
+        html_content = file.read()
+    logging.info("Compra confirmada com sucesso! Status: 200")
     return HTMLResponse(content=html_content, status_code=200)
 
 
