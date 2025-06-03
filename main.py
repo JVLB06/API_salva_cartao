@@ -24,8 +24,8 @@ SECRET_KEY = "chave"
 data_inicial = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M:%S")
 
 # Cache para tokens pendentes e válidos
-tokens_pendentes = TTLCache(maxsize=1000, ttl=18000)  # 5h
-tokens_validos = TTLCache(maxsize=1000, ttl=36000)    # 10h
+tokens_pendentes = TTLCache(maxsize=1000, ttl=18000/5)  # 1h
+tokens_validos = TTLCache(maxsize=1000, ttl=12000)    # 3h
 
 # Modelos de entrada de dados
 class DadosCartao(BaseModel):
@@ -77,7 +77,7 @@ def solicita_compra(dados_cartao: DadosCartao):
     Gera um token JWT a partir dos dados do cartão e salva no cache de pendentes.
     """
     payload = dados_cartao.dict() 
-    payload["exp"] = datetime.now(timezone.utc) + timedelta(hours=5) # 5h até expirar
+    payload["exp"] = datetime.now(timezone.utc) + timedelta(hours=1) # 1h até expirar
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     logging.info(f"Solicitação de compra recebida: {token}")
     payload["exp"] =  f"{payload['exp']}" # Converte para string ISO
