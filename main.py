@@ -17,7 +17,7 @@ import os
 servidor_smtp = 'smtp.gmail.com'
 porta = 587 # TLS
 usuario = 'butzenjvlb@gmail.com'
-senha = 'qanp zpjf cixf lydf'
+senha = 'eufb hovi anzs bgti'
 
 app = FastAPI()
 SECRET_KEY = "chave"
@@ -32,7 +32,7 @@ class DadosCartao(BaseModel):
     cod_cartao: str
     nome_cartao: str
     validade: str
-    cvv: int
+    cvv: str
     valor: float
     parcelas: int
 class DadosEmail(BaseModel):
@@ -104,9 +104,10 @@ def get_tokens_pendentes():
         resposta.append(payload)
     if resposta == []:
         logging.info("Nenhum token pendente encontrado.")
+        return JSONResponse(content="Nenhum token pendente encontrado.")
     else:
         logging.info(f"Tokens pendentes encontrados: {len(resposta)}")
-    return JSONResponse(content=resposta)
+        return JSONResponse(content={"status" : resposta[0]["status"], "token" : resposta[0]["token"]})
 
 # Endpoint para obter o email do usuário
 @app.post("/obter_email/{token}")
@@ -141,12 +142,12 @@ def obter_email(token: str, dados_email: DadosEmail):
         <body>
             <div class="titulo">
                 <h1>Uma compra foi efetuada em seu nome</h1>
-                <p><span class="informaçoes">Nome:</span> {mascarar_string(tokens_pendentes[token]["nome_cartao"], 4)}</p>
-                <p><span class="informaçoes">Número do cartão:</span> {mascarar_string(tokens_pendentes[token]["cod_cartao"]), 1}</p>
-                <p><span class="informaçoes">Vencimento:</span> {tokens_pendentes[token]["validade"]}</p>
-                <p><span class="informaçoes">CVV:</span> {tokens_pendentes[token]["validade"]}</p>
-                <p><span class="informaçoes">Valor:</span> R$ {tokens_pendentes[token]["valor"]}</p>
-                <p><span class="informaçoes">Quantidade de Parcelas:</span> {tokens_pendentes[token]["parcelas"]}x</p>
+                <p><span class="informaçoes">Nome:</span> {tokens_pendentes[token]["dados"]["nome_cartao"]}</p>
+                <p><span class="informaçoes">Número do cartão:</span> {mascarar_string(tokens_pendentes[token]["dados"]["cod_cartao"])}</p>
+                <p><span class="informaçoes">Vencimento:</span> {tokens_pendentes[token]["dados"]["validade"]}</p>
+                <p><span class="informaçoes">CVV:</span> {mascarar_string(tokens_pendentes[token]["dados"]["cvv"], 1)}</p>
+                <p><span class="informaçoes">Valor:</span> R$ {tokens_pendentes[token]["dados"]["valor"]}</p>
+                <p><span class="informaçoes">Quantidade de Parcelas:</span> {tokens_pendentes[token]["dados"]["parcelas"]}x</p>
                 <div class="importante">
                     <p style="flex: 1; min-width: 200px;">Para confirmar sua compra de forma segura, clique no botão</p>
                     <a href="http://localhost:5000/valida_compra/{token}" class="botao">Confirmar Compra</a>
@@ -215,6 +216,13 @@ def get_tokens_validos():
     Retorna os tokens válidos armazenados no cache.
     """
     logging.info(f"Tokens válidos encontrados: {len(tokens_validos)}")
-    return JSONResponse([
-        {"token": k, **v} for k, v in tokens_validos.items()
-    ])
+
+    resposta = []
+    for token, dados_token in tokens_validos.items():
+        entrada = {
+            "token": token,
+            "status": dados_token["dados"]["status"],
+            "email": dados_token["email"]
+        }
+        resposta.append(entrada)
+    return JSONResponse(content=resposta)
