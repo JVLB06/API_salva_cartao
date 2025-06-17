@@ -54,7 +54,7 @@ def configurar_logger():
         encoding="utf-8"
     )
     # Nome do arquivo com data no formato DD.MM.txt
-    handler.suffix = "%d.%m"
+    handler.suffix = "%d.%m.%y"
     # Configuração do logger
     logging.basicConfig(
         level=logging.INFO,
